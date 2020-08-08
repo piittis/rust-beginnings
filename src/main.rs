@@ -1,29 +1,51 @@
 mod chunk;
+mod compiler;
 mod debug;
 mod instruction;
+mod scanner;
 mod vm;
 
-use crate::instruction::OP_ADD;
-use crate::instruction::OP_DIVIDE;
-use crate::instruction::OP_NEGATE;
-use crate::instruction::OP_RETURN;
 use chunk::Chunk;
+use compiler::compile;
+use std::env;
+use std::fs;
+use std::io;
+use std::io::Write;
 use vm::VM;
 
 fn main() {
-    let mut chunk = Chunk::new();
+    let args: Vec<String> = env::args().collect();
+    match args.len() {
+        1 => repl(),
+        2 => run_file(),
+        _ => {} // report error
+    }
+}
 
-    chunk.write_constant(1.2, 123);
-    chunk.write_constant(3.4, 123);
-    chunk.write_chunk(OP_ADD, 123);
+fn repl() {
+    loop {
+        print!("> ");
+        io::stdout().flush();
+        let mut line = String::new();
+        io::stdin().read_line(&mut line).expect("cant read line");
 
-    chunk.write_constant(5.6, 123);
-    chunk.write_chunk(OP_DIVIDE, 123);
-    chunk.write_chunk(OP_NEGATE, 123);
-    chunk.write_chunk(OP_RETURN, 123);
+        interpret(&line);
+    }
+}
 
-    println!("{:?}", chunk);
+fn run_file() {
+    let file = read_file();
 
-    // disassemble_chunk(&chunk, "test chunk");
+    interpret(&file);
+    println!("runFile");
+}
+
+fn read_file() -> String {
+    fs::read_to_string("./foo").unwrap()
+}
+
+fn interpret(source: &str) {
+    let chunk = Chunk::new();
+    compile(source, &chunk);
     VM::interpret(&chunk);
 }
